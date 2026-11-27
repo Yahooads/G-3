@@ -32,6 +32,7 @@
       user-select: none;
     }
     .video-wrap {
+      position: relative;
       width: 100%;
       height: 100%;
       display: flex;
@@ -45,10 +46,23 @@
       max-width: 100%;
       object-fit: cover;
       display: block;
-      transition: filter 0.25s ease;
     }
-    video.ended-blur {
-      filter: blur(5px) brightness(0.85);
+    video.hide-video {
+      opacity: 0;
+    }
+    .end-bg-poster {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      background-image: url("https://i.postimg.cc/GtHgTtfm/IMG-20261125-121925.jpg");
+      background-size: cover;
+      background-position: center;
+      filter: blur(7px) brightness(0.78);
+      transform: scale(1.08);
+      display: none;
+    }
+    .end-bg-poster.visible {
+      display: block;
     }
     .unmute-btn {
       position: fixed;
@@ -92,228 +106,4 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(0, 0, 0, 0.48);
-      color: #ffffff;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 999px;
-    }
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #ff2b4e;
-    }
-    .center-stage {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.35);
-      cursor: pointer;
-    }
-    .center-stage.hidden {
-      display: none;
-    }
-    .play-ring-wrap {
-      position: relative;
-      width: 96px;
-      height: 96px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .arc-spinner {
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      border: 2.5px solid rgba(255, 255, 255, 0.14);
-      border-top-color: #ffffff;
-      animation: spinRing 0.9s linear infinite;
-      pointer-events: none;
-    }
-    .arc-spinner.hidden {
-      display: none;
-    }
-    @keyframes spinRing {
-      to { transform: rotate(360deg); }
-    }
-    .play-circle-btn {
-      width: 84px;
-      height: 84px;
-      border-radius: 50%;
-      background: #e11d2a;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 6px 24px rgba(225, 29, 42, 0.45);
-      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .play-circle-btn.end-style {
-      width: 86px;
-      height: 86px;
-      background: #ffffff;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-    }
-    .play-circle-btn svg {
-      width: 30px;
-      height: 30px;
-      margin-left: 4px;
-    }
-    .play-circle-btn svg polygon {
-      fill: #ffffff;
-      transition: fill 0.2s ease;
-    }
-    .play-circle-btn.end-style svg polygon {
-      fill: #ff3b5c;
-    }
-    .caption-pill {
-      font-size: 15px;
-      font-weight: 500;
-      color: #e5e5e5;
-      letter-spacing: 0.2px;
-      text-align: center;
-    }
-    .caption-pill.end-style {
-      background: rgba(0, 0, 0, 0.52);
-      color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 14px;
-      font-weight: 500;
-    }
-  </style>
-</head>
-<body>
-  <button type="button" class="unmute-btn" id="unmuteBtn">Tap to Unmute</button>
-
-  <div class="top-badges" id="topBadges">
-    <span class="badge-name">Sofia, 22</span>
-    <span class="badge-watching"><span class="live-dot"></span>2 925 watching</span>
-  </div>
-
-  <div class="video-wrap">
-    <video
-      id="mainVideo"
-      src="https://files.catbox.moe/4ut9uw.mp4"
-      poster="https://i.postimg.cc/GtHgTtfm/IMG-20261125-121925.jpg"
-      autoplay
-      muted
-      playsinline
-      preload="auto"
-    ></video>
-  </div>
-
-  <div class="center-stage" id="bufferingOverlay">
-    <div class="play-ring-wrap">
-      <div class="arc-spinner" id="spinnerRing"></div>
-      <button type="button" class="play-circle-btn" id="playBtn" aria-label="Play">
-        <svg viewBox="0 0 36 36" aria-hidden="true">
-          <polygon points="10,6 30,18 10,30"></polygon>
-        </svg>
-      </button>
-    </div>
-    <div class="caption-pill" id="statusText">Buffering HD Stream (99%)...</div>
-  </div>
-
-  <script>
-    (function () {
-      const video = document.getElementById("mainVideo");
-      const overlay = document.getElementById("bufferingOverlay");
-      const spinner = document.getElementById("spinnerRing");
-      const playBtn = document.getElementById("playBtn");
-      const statusText = document.getElementById("statusText");
-      const unmuteBtn = document.getElementById("unmuteBtn");
-      const topBadges = document.getElementById("topBadges");
-
-      let videoFinished = false;
-
-      video.loop = false;
-
-      function showBufferingState() {
-        if (videoFinished) return;
-        video.classList.remove("ended-blur");
-        topBadges.classList.remove("visible");
-        spinner.classList.remove("hidden");
-        playBtn.classList.remove("end-style");
-        statusText.classList.remove("end-style");
-        statusText.textContent = "Buffering HD Stream (99%)...";
-        overlay.classList.remove("hidden");
-      }
-
-      function showEndTapState() {
-        videoFinished = true;
-        video.classList.add("ended-blur");
-        topBadges.classList.add("visible");
-        spinner.classList.add("hidden");
-        playBtn.classList.add("end-style");
-        statusText.classList.add("end-style");
-        statusText.textContent = "Tap to play";
-        unmuteBtn.style.display = "none";
-        overlay.classList.remove("hidden");
-      }
-
-      function hideOverlay() {
-        if (videoFinished) return;
-        video.classList.remove("ended-blur");
-        topBadges.classList.remove("visible");
-        overlay.classList.add("hidden");
-      }
-
-      video.addEventListener("playing", hideOverlay);
-      video.addEventListener("waiting", showBufferingState);
-      video.addEventListener("pause", function () {
-        if (!video.ended && !videoFinished) {
-          showBufferingState();
-        }
-      });
-      video.addEventListener("ended", function () {
-        video.pause();
-        showEndTapState();
-      });
-
-      function handleMainTap() {
-        if (videoFinished) {
-          videoFinished = false;
-          video.classList.remove("ended-blur");
-          topBadges.classList.remove("visible");
-          video.currentTime = 0;
-          video.play().catch(function () {});
-          return;
-        }
-        video.play().catch(function () {});
-      }
-
-      playBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        handleMainTap();
-      });
-
-      overlay.addEventListener("click", handleMainTap);
-
-      unmuteBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        if (videoFinished) {
-          handleMainTap();
-          return;
-        }
-        video.muted = false;
-        video.play().catch(function () {});
-        unmuteBtn.style.display = "none";
-      });
-
-      video.play().catch(function () {});
-    })();
-  </script>
-
-  <script>(function(s){s.dataset.zone='12186253',s.src='https://llvpn.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-</body>
-</html>
+      background: rgba(0, 0, 0, 0.5
