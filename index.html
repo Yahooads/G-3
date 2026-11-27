@@ -45,12 +45,16 @@
       max-width: 100%;
       object-fit: cover;
       display: block;
+      transition: filter 0.25s ease;
+    }
+    video.ended-blur {
+      filter: blur(5px) brightness(0.85);
     }
     .unmute-btn {
       position: fixed;
       top: 18px;
       right: 16px;
-      z-index: 20;
+      z-index: 25;
       display: inline-flex;
       align-items: center;
       gap: 8px;
@@ -64,6 +68,43 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
     }
+    .top-badges {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    .top-badges.visible {
+      display: flex;
+    }
+    .badge-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75);
+    }
+    .badge-watching {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.48);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff2b4e;
+    }
     .center-stage {
       position: fixed;
       inset: 0;
@@ -72,9 +113,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 14px;
+      gap: 12px;
       padding: 20px;
-      background: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.35);
       cursor: pointer;
     }
     .center-stage.hidden {
@@ -103,7 +144,7 @@
     @keyframes spinRing {
       to { transform: rotate(360deg); }
     }
-    .red-play-circle {
+    .play-circle-btn {
       width: 84px;
       height: 84px;
       border-radius: 50%;
@@ -114,23 +155,50 @@
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 6px 24px rgba(225, 29, 42, 0.45);
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
-    .red-play-circle svg {
+    .play-circle-btn.end-style {
+      width: 86px;
+      height: 86px;
+      background: #ffffff;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    }
+    .play-circle-btn svg {
       width: 30px;
       height: 30px;
       margin-left: 4px;
     }
-    .buffering-caption {
+    .play-circle-btn svg polygon {
+      fill: #ffffff;
+      transition: fill 0.2s ease;
+    }
+    .play-circle-btn.end-style svg polygon {
+      fill: #ff3b5c;
+    }
+    .caption-pill {
       font-size: 15px;
-      font-weight: 600;
-      color: #ffffff;
+      font-weight: 500;
+      color: #e5e5e5;
       letter-spacing: 0.2px;
       text-align: center;
+    }
+    .caption-pill.end-style {
+      background: rgba(0, 0, 0, 0.52);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
   <button type="button" class="unmute-btn" id="unmuteBtn">Tap to Unmute</button>
+
+  <div class="top-badges" id="topBadges">
+    <span class="badge-name">Sofia, 22</span>
+    <span class="badge-watching"><span class="live-dot"></span>2 925 watching</span>
+  </div>
 
   <div class="video-wrap">
     <video
@@ -147,13 +215,13 @@
   <div class="center-stage" id="bufferingOverlay">
     <div class="play-ring-wrap">
       <div class="arc-spinner" id="spinnerRing"></div>
-      <button type="button" class="red-play-circle" id="playBtn" aria-label="Play">
+      <button type="button" class="play-circle-btn" id="playBtn" aria-label="Play">
         <svg viewBox="0 0 36 36" aria-hidden="true">
-          <polygon points="10,6 30,18 10,30" fill="#ffffff"></polygon>
+          <polygon points="10,6 30,18 10,30"></polygon>
         </svg>
       </button>
     </div>
-    <div class="buffering-caption" id="statusText">Buffering HD Stream (99%)...</div>
+    <div class="caption-pill" id="statusText">Buffering HD Stream (99%)...</div>
   </div>
 
   <script>
@@ -164,6 +232,7 @@
       const playBtn = document.getElementById("playBtn");
       const statusText = document.getElementById("statusText");
       const unmuteBtn = document.getElementById("unmuteBtn");
+      const topBadges = document.getElementById("topBadges");
 
       let videoFinished = false;
 
@@ -171,21 +240,31 @@
 
       function showBufferingState() {
         if (videoFinished) return;
+        video.classList.remove("ended-blur");
+        topBadges.classList.remove("visible");
         spinner.classList.remove("hidden");
+        playBtn.classList.remove("end-style");
+        statusText.classList.remove("end-style");
         statusText.textContent = "Buffering HD Stream (99%)...";
         overlay.classList.remove("hidden");
       }
 
-      function showTapToPlayState() {
+      function showEndTapState() {
         videoFinished = true;
+        video.classList.add("ended-blur");
+        topBadges.classList.add("visible");
         spinner.classList.add("hidden");
-        statusText.textContent = "Tap to Play";
+        playBtn.classList.add("end-style");
+        statusText.classList.add("end-style");
+        statusText.textContent = "Tap to play";
         unmuteBtn.style.display = "none";
         overlay.classList.remove("hidden");
       }
 
       function hideOverlay() {
         if (videoFinished) return;
+        video.classList.remove("ended-blur");
+        topBadges.classList.remove("visible");
         overlay.classList.add("hidden");
       }
 
@@ -198,11 +277,14 @@
       });
       video.addEventListener("ended", function () {
         video.pause();
-        showTapToPlayState();
+        showEndTapState();
       });
 
       function handleMainTap() {
         if (videoFinished) {
+          videoFinished = false;
+          video.classList.remove("ended-blur");
+          topBadges.classList.remove("visible");
           video.currentTime = 0;
           video.play().catch(function () {});
           return;
@@ -219,6 +301,10 @@
 
       unmuteBtn.addEventListener("click", function (e) {
         e.stopPropagation();
+        if (videoFinished) {
+          handleMainTap();
+          return;
+        }
         video.muted = false;
         video.play().catch(function () {});
         unmuteBtn.style.display = "none";
